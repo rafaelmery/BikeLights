@@ -1,19 +1,19 @@
 #include <Adafruit_NeoPixel.h>
-#ifdef __AVR__
- #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
-#endif
 
-// Which pin on the Arduino is connected to the NeoPixels?
-#define RearRightPIN        10
-#define RearLeftPIN         11 
-#define FrontRightPIN       12
-#define FrontLeftPIN        13 
+#define RearRightPIN        12
+#define RearLeftPIN         13 
+#define FrontRightPIN       10
+#define FrontLeftPIN        11
+#define TurnLeftBtn         2
+#define TurnRightBtn        3
 
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS 12 // Popular NeoPixel ring size
 
 int FIRSTRUN = 1;
-int turnSign = 0;
+int serialInput = 0;
+boolean LeftSign = false;
+boolean RightSign = false;
 boolean Break = false;
 
 Adafruit_NeoPixel RearRightLed(NUMPIXELS, RearRightPIN , NEO_GRB + NEO_KHZ800);
@@ -21,98 +21,101 @@ Adafruit_NeoPixel RearLeftLed(NUMPIXELS, RearLeftPIN , NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel FrontRightLed(NUMPIXELS, FrontRightPIN , NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel FrontLeftLed(NUMPIXELS, FrontLeftPIN , NEO_GRB + NEO_KHZ800);
 
-//#define DELAYVAL 200 // Time (in milliseconds) to pause between pixels
-
 void setup() {
-  RearRightLed.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  RearLeftLed.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  FrontRightLed.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  FrontLeftLed.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  Serial.begin(9600);  
+  RearRightLed.begin(); 
+  RearLeftLed.begin(); 
+  FrontRightLed.begin(); 
+  FrontLeftLed.begin(); 
+  Serial.begin(9600);
 }
 
 void loop() {
 
   if(FIRSTRUN != 0){
-    RearLedStart();
-    FrontLightStart();
+    LedStart();
     FIRSTRUN = 0;
   } else {
-    turnSign = Serial.read();
-    if(turnSign == '1'){
-      Serial.println("Turn Right");
-      TurnRightLight();      
-    }
+    serialInput = Serial.read();
+    Serial.println("Valor inserido:" );
+    Serial.println(serialInput);
 
-    if(turnSign == '2'){      
-      Serial.println("Turn Left");
-      TurnLeftLight();
-    }
-
-    if(turnSign == '3'){      
-      Serial.println("Break");
-      BreakLight();
+    switch (serialInput){
+      case '1':
+        TurnLeftLight();
+        break;
+      case '2':
+        TurnRightLight();
+        break;
     }
     
-    RearLightStandBy(); 
-    FrontLightStandBy(); 
+    LightStandBy();    
   }
 }
 
-void RearLedStart(){
+void LedStart(){
   RearRightLed.clear();
   RearLeftLed.clear(); 
+  FrontRightLed.clear();
+  FrontLeftLed.clear(); 
+  
+  for(int i=0; i<NUMPIXELS; i++) {    
+    for (int j=0; j < 255; j=j+3){
+      RearRightLed.setPixelColor(i, RearRightLed.Color(j, 0, 0));      
+      RearLeftLed.setPixelColor(i, RearLeftLed.Color(j, 0, 0));
+      FrontRightLed.setPixelColor(i, FrontRightLed.Color(j, j, j)); //initializing Right light      
+      FrontLeftLed.setPixelColor(i, FrontLeftLed.Color(j, j, j)); //initializing left light
+      RearRightLed.show(); 
+      RearLeftLed.show(); 
+      FrontRightLed.show();
+      FrontLeftLed.show();   
+    } 
+  } 
+}
+
+
+void LightStandBy(){
+  RearRightLed.clear();
+  RearLeftLed.clear(); 
+  FrontRightLed.clear();
+  FrontLeftLed.clear(); 
+
   for(int i=0; i<NUMPIXELS; i++) { 
-    for (int j=0; j < 255; j++){
+    FrontRightLed.setPixelColor(i, FrontRightLed.Color(255, 255, 255));      
+    FrontLeftLed.setPixelColor(i, FrontLeftLed.Color(255, 255, 255));
+    FrontRightLed.show(); 
+    FrontLeftLed.show(); 
+  }
+  
+  for(int i=0; i<NUMPIXELS; i++) {    
+    for (int j=0; j <= 255; j=j+3){
+        RearRightLed.setPixelColor(i, RearRightLed.Color(j, 0, 0));      
+        RearLeftLed.setPixelColor(i, RearLeftLed.Color(j, 0, 0));
+        RearRightLed.show(); 
+        RearLeftLed.show(); 
+    } 
+  } 
+  for(int i=0; i<NUMPIXELS; i++) {    
+    for (int j=255; j >= 0; j=j-3){
       RearRightLed.setPixelColor(i, RearRightLed.Color(j, 0, 0));      
       RearLeftLed.setPixelColor(i, RearLeftLed.Color(j, 0, 0));
       RearRightLed.show(); 
-      RearLeftLed.show();     
-    } 
-  }
-}
-
-void FrontLightStart(){
-  FrontRightLed.clear();
-  FrontLeftLed.clear(); 
-  for(int i=0; i<NUMPIXELS; i++) { 
-    for (int j=0; j < 255; j++){
-      FrontRightLed.setPixelColor(i, FrontRightLed.Color(j, j, j)); //initializing Right light      
-      FrontLeftLed.setPixelColor(i, FrontLeftLed.Color(j, j, j)); //initializing left light
-      FrontRightLed.show();
-      FrontLeftLed.show();    
-    } 
-  }
-}
-
-void RearLightStandBy(){
-  RearRightLed.clear(); 
-  RearLeftLed.clear(); 
-  for(int i=0; i<NUMPIXELS; i++) { 
-    RearRightLed.setPixelColor(i, RearRightLed.Color(255, 0, 0));  
-    RearLeftLed.setPixelColor(i, RearLeftLed.Color(255, 0, 0));        
-  }
-  RearRightLed.show();   
-  RearLeftLed.show(); 
-}
-
-void FrontLightStandBy(){
-  FrontRightLed.clear(); 
-  FrontLeftLed.clear(); 
-  for(int i=0; i<NUMPIXELS; i++) { 
-    FrontRightLed.setPixelColor(i, FrontRightLed.Color(255, 255, 255));  
-    FrontLeftLed.setPixelColor(i, FrontLeftLed.Color(255, 255, 255));        
-  }
-  //FrontLeftLed.setBrightness(70);
-  //FrontRightLed.setBrightness(70);
-  FrontRightLed.show();   
-  FrontLeftLed.show(); 
+      RearLeftLed.show(); 
+    }     
+  }    
+  
 }
 
 void TurnLeftLight(){
+
+ 
   for (int k=0; k < 6; k++){
     RearLeftLed.clear(); 
     FrontLeftLed.clear();
+
+    for(int i=0; i<NUMPIXELS; i++) {
+      RearRightLed.setPixelColor(i, RearRightLed.Color(255, 0, 0));         
+      RearRightLed.show(); 
+    } 
     
     for(int i=0; i<NUMPIXELS; i++) { 
       RearLeftLed.setPixelColor(i, RearLeftLed.Color(153, 153, 0)); // Yellow light
@@ -139,6 +142,11 @@ void TurnRightLight(){
   for (int k=0; k < 6; k++){
     RearRightLed.clear(); 
     FrontRightLed.clear();
+
+    for(int i=0; i<NUMPIXELS; i++) {
+      RearLeftLed.setPixelColor(i, RearLeftLed.Color(255, 0, 0));         
+      RearLeftLed.show(); 
+    }
     
     for(int i=0; i<NUMPIXELS; i++) { 
       RearRightLed.setPixelColor(i, RearRightLed.Color(153, 153, 0)); // Yellow light
